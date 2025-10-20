@@ -32,6 +32,8 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdint.h>
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -59,6 +61,11 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 
 /* USER CODE BEGIN Private defines */
+
+#define UART_TX_PIN   GPIO_PIN_9
+#define UART_TX_PORT  GPIOA
+#define UART_RX_PIN   GPIO_PIN_10
+#define UART_RX_PORT  GPIOA
 
 /* USER CODE END Private defines */
 
