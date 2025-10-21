@@ -60,6 +60,8 @@ void uart_send_data(uint8_t* restrict const data)
 	flagStartBit = 0;
 	flagDataTx = 0;
 	flagParityBit = 0;
+
+	TIM2->CNT = 0; /*reset counter register*/
 	timeUart = 0;
 
 	HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, GPIO_PIN_RESET);
@@ -72,6 +74,7 @@ static inline void uart_check_parity(void)
 {
 
 }
+
 
 
 static inline void uart_com_handle(void)
@@ -88,6 +91,7 @@ static inline void uart_com_handle(void)
 				flagStartBit = 1;
 				flagDataTx = 1;
 				bitIndex = 0;
+
 			}
 
 			if(flagDataTx == 1)
@@ -96,7 +100,7 @@ static inline void uart_com_handle(void)
 
 				if(bitIndex < 8 && timeUart == 0)
 				{
-					if((bufferUart.data & (1<<bitIndex))) /*1*/
+					if((bufferUart.data & (1<<bitIndex)) != 0) /*1*/
 					{
 						HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, GPIO_PIN_SET);
 					}
@@ -108,11 +112,14 @@ static inline void uart_com_handle(void)
 
 					bitIndex++;
 
+					return; /*the return will make the 8th bit
+							  last all cycle until timeUart is 0*/
+
 				}
 
 				/*parity bit tx*/
 
-				if(bitIndex > 8)
+				if(bitIndex == 8 && timeUart == 0)
 				{
 					if(bufferUart.parity == None)
 					{
@@ -155,6 +162,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	{
 		timeUart = (timeUart + 1) % 2;
 		uart_com_handle();
+		//HAL_GPIO_TogglePin(UART_TX_PORT, UART_TX_PIN);
 	}
 
 }

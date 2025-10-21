@@ -91,11 +91,12 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
+  uart_init(0);
+  HAL_Delay(500);
   HAL_TIM_Base_Start_IT(&htim2);
 
-  char data = 'a';
+  uint8_t data = 0xAA;
 
-  uart_init(0);
   uart_send_data(&data);
 
   /* USER CODE END 2 */
@@ -175,9 +176,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 167;
+  htim2.Init.Prescaler = 3;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 19199;
+  htim2.Init.Period = 34999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
