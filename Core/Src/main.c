@@ -92,10 +92,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   uart_init(0);
-  HAL_Delay(500);
   HAL_TIM_Base_Start_IT(&htim2);
 
-  uint8_t data = 0xAA;
+  uint8_t data = 'a';
 
   uart_send_data(&data);
 
@@ -231,7 +230,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA10 */
   GPIO_InitStruct.Pin = GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/

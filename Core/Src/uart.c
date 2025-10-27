@@ -33,7 +33,6 @@ static uint8_t bitIndex = 0;
 static uint8_t flagRxStart = 0;
 
 
-
 void uart_init(PARITY parity)
 {
 	/*
@@ -167,7 +166,7 @@ static inline void uart_com_handle(void)
 				flagRxStart = 0;
 			}
 
-			if(bitIndex < 8 && timeUart)
+			if(bitIndex < 8 && timeUart == 1)
 			{
 				/*receive the message at time 1*/
 
@@ -180,7 +179,7 @@ static inline void uart_com_handle(void)
 				else
 				{
 					/*LOW -> 0*/
-					bufferUart.data = bufferUart.data & (0xFE<<bitIndex);
+					bufferUart.data = bufferUart.data & ~(1<<bitIndex);
 				}
 
 				bitIndex++;
@@ -189,13 +188,14 @@ static inline void uart_com_handle(void)
 					    /*all cycle until 0 uart time*/
 			}
 
-			if(bitIndex == 8)
+			if(bitIndex == 8 && timeUart == 1)
 			{
 				/*end rx transmission*/
 
 				if(bufferUart.parity == None)
 				{
-					bufferUart.state = EndTX;
+					/*stop bit*/
+					bufferUart.state = EndRX;
 				}
 
 				if(bufferUart.parity == Odd)
@@ -214,8 +214,9 @@ static inline void uart_com_handle(void)
 
 
 		case(EndRX):
-				HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
-				bufferUart.state = IDLE;
+    	    	__HAL_GPIO_EXTI_CLEAR_IT(UART_RX_PIN); /*clear intr bit flag*/
+    	    	bufferUart.state = IDLE;
+    	    	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 		break;
 
 
@@ -252,6 +253,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	{
 		/*start reception data*/
 		HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+
 		flagRxStart = 1;
 		timeUart = 0;
 		bitIndex = 0;
