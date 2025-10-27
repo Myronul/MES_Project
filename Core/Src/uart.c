@@ -17,17 +17,21 @@ typedef struct UART
 	STATE state;
 	PARITY parity;
 
-
 }UART;
 
 
 static UART bufferUart = {0,0,0}; /*init uart buffer*/
 static uint16_t timeUart = 0;
 
+/*flags for TX data*/
 static uint8_t flagStartBit = 0;
 static uint8_t flagDataTx = 0;
 static uint8_t flagParityBit = 0;
 static uint8_t bitIndex = 0;
+
+/*flags for RX data*/
+static uint8_t flagRxStart = 0;
+
 
 
 void uart_init(PARITY parity)
@@ -143,10 +147,77 @@ static inline void uart_com_handle(void)
 		break;
 
 
-		case(EndTX):
 
+		case(EndTX):
 			bufferUart.state = IDLE;
 		break;
+
+
+
+		case(RX):
+
+			if(flagRxStart==1 && timeUart==1)
+			{
+				/*start bit, wait...*/
+				return;
+			}
+
+			else
+			{
+				flagRxStart = 0;
+			}
+
+			if(bitIndex < 8 && timeUart)
+			{
+				/*receive the message at time 1*/
+
+				if(HAL_GPIO_ReadPin(UART_RX_PORT, UART_RX_PIN) == 1)
+				{
+					/*HIGH -> 1*/
+					bufferUart.data = bufferUart.data | (1<<bitIndex);
+				}
+
+				else
+				{
+					/*LOW -> 0*/
+					bufferUart.data = bufferUart.data & (0xFE<<bitIndex);
+				}
+
+				bitIndex++;
+
+				return; /*the return will make the 8th bit last*/
+					    /*all cycle until 0 uart time*/
+			}
+
+			if(bitIndex == 8)
+			{
+				/*end rx transmission*/
+
+				if(bufferUart.parity == None)
+				{
+					bufferUart.state = EndTX;
+				}
+
+				if(bufferUart.parity == Odd)
+				{
+
+				}
+
+				if(bufferUart.parity == Even)
+				{
+
+				}
+
+			}
+	    break;
+
+
+
+		case(EndRX):
+				HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+				bufferUart.state = IDLE;
+		break;
+
 
 
 		default: break;
@@ -157,6 +228,9 @@ static inline void uart_com_handle(void)
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
+	/*
+	 * Weak function ISR for the timer callback
+	 */
 
 	if(htim->Instance == TIM2)
 	{
@@ -166,6 +240,39 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 
 }
+
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	/*
+	 * Weak function ISR for the interrupt RX callback
+	 */
+
+	if(GPIO_Pin == UART_RX_PIN)
+	{
+		/*start reception data*/
+		HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+		flagRxStart = 1;
+		timeUart = 0;
+		bitIndex = 0;
+		bufferUart.data = 0; /*init data*/
+		TIM2->CNT = 0;
+
+		bufferUart.state = RX;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
