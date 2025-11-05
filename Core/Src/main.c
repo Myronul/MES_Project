@@ -94,9 +94,10 @@ int main(void)
   uart_init(0);
   HAL_TIM_Base_Start_IT(&htim2);
 
-  uint8_t data = 'a';
+  //uint8_t data = 'a';
+  //uart_send_byte(data);
 
-  uart_send_data(&data);
+  uart_send_data("Pui de piropopircanita", 22);
 
   /* USER CODE END 2 */
 

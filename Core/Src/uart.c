@@ -24,13 +24,24 @@ static UART bufferUart = {0,0,0}; /*init uart buffer*/
 static uint16_t timeUart = 0;
 
 /*flags for TX data*/
-static uint8_t flagStartBit = 0;
-static uint8_t flagDataTx = 0;
-static uint8_t flagParityBit = 0;
-static uint8_t bitIndex = 0;
+static volatile uint8_t flagStartBit = 0;
+static volatile uint8_t flagStopBit = 0;
+static volatile uint8_t flagDataTx = 0;
+static volatile uint8_t flagParityBit = 0;
+static volatile uint8_t bitIndex = 0;
 
 /*flags for RX data*/
-static uint8_t flagRxStart = 0;
+static volatile uint8_t flagRxStart = 0;
+
+
+
+/*Functions prototypes*/
+void uart_init(PARITY parity);
+void uart_send_data(char* restrict data, size_t len);
+static inline void uart_send_byte(uint8_t data);
+static inline void uart_check_parity(void);
+static inline void uart_com_handle(void);
+
 
 
 void uart_init(PARITY parity)
@@ -49,16 +60,17 @@ void uart_init(PARITY parity)
 }
 
 
-void uart_send_data(uint8_t* restrict const data)
+
+static inline void uart_send_byte(uint8_t data)
 {
 	/*
 	 * Function to change the state in sending data. The effective sending
 	 * will have place in the interrupt function call
-	 * Input: pointer to the data of unsigned 8 bit
+	 * Input: data of unsigned 8 bit
 	 * Output: void
 	 */
 
-	bufferUart.data = *data;
+	bufferUart.data = data;
 
 	flagStartBit = 0;
 	flagDataTx = 0;
@@ -71,6 +83,29 @@ void uart_send_data(uint8_t* restrict const data)
 	bufferUart.state = TX;
 
 }
+
+
+
+void uart_send_data(char* restrict data, size_t len)
+{
+	/*
+	 * Function to send a large number of data.
+	 * Input: Pointer to the data of 8 bit data type
+	 * 		  Length of the data packet
+	 * Output: void
+	 */
+
+
+	while(len != 0)
+	{
+		while(bufferUart.state == TX || bufferUart.state == EndTX); /*wait for idle state*/
+		uart_send_byte(*data);
+		data++;
+		len--;
+	}
+
+}
+
 
 
 static inline void uart_check_parity(void)
@@ -122,12 +157,27 @@ static inline void uart_com_handle(void)
 
 				/*parity bit tx*/
 
-				if(bitIndex == 8 && timeUart == 0)
+				if(bitIndex == 8) /*first iteration is 0*/
 				{
 					if(bufferUart.parity == None)
 					{
-						HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, GPIO_PIN_SET);
-						bufferUart.state = EndTX;
+						if(timeUart == 0 && flagStopBit == 0)
+						{
+							flagStopBit = 1;
+							HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, GPIO_PIN_SET);
+							return;
+						}
+
+						if(timeUart==1 && flagStopBit == 1)
+						{
+							return; /*make sure to end stop bit*/
+						}
+
+						if(timeUart == 0 && flagStopBit == 1)
+						{
+							flagStopBit = 0;
+							bufferUart.state = EndTX;
+						}
 
 					}
 
