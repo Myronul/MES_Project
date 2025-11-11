@@ -91,7 +91,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
-  uart_init(0);
+  uart_init(1);
   HAL_TIM_Base_Start_IT(&htim2);
 
   //uint8_t data = 'a';

@@ -21,12 +21,14 @@ typedef struct UART
 
 
 static UART bufferUart = {0,0,0}; /*init uart buffer*/
-static uint16_t timeUart = 0;
+static volatile uint16_t timeUart = 0;
 
 /*flags for TX data*/
 static volatile uint8_t flagStartBit = 0;
 static volatile uint8_t flagStopBit = 0;
 static volatile uint8_t flagDataTx = 0;
+static volatile uint8_t flagSendBit = 0;
+static volatile uint8_t flagEndBit = 0; /*check end send bit function*/
 static volatile uint8_t flagParityBit = 0;
 static volatile uint8_t bitIndex = 0;
 
@@ -39,7 +41,7 @@ static volatile uint8_t flagRxStart = 0;
 void uart_init(PARITY parity);
 void uart_send_data(char* restrict data, size_t len);
 static inline void uart_send_byte(uint8_t data);
-static inline void uart_check_parity(void);
+static inline uint8_t uart_check_parity(uint8_t data);
 static inline void uart_com_handle(void);
 
 
@@ -74,7 +76,13 @@ static inline void uart_send_byte(uint8_t data)
 
 	flagStartBit = 0;
 	flagDataTx = 0;
-	flagParityBit = 0;
+	flagSendBit = 0;
+    flagEndBit = 0;
+
+    if(bufferUart.parity != None)
+    {
+    	flagParityBit = uart_check_parity(bufferUart.data);
+    }
 
 	TIM2->CNT = 0; /*reset counter register*/
 	timeUart = 0;
@@ -108,8 +116,96 @@ void uart_send_data(char* restrict data, size_t len)
 
 
 
-static inline void uart_check_parity(void)
+static inline uint8_t uart_check_parity(uint8_t data)
 {
+	/*
+	 * Function that will return the parity of the
+	 * data frame response. It will return true for
+	 * even parity and false for odd parity in O(1) time
+	 * Input: 8 bit data value
+	 * Output: uint8_t 0 or 1
+	 */
+
+
+	data = data - ((data>>1)&0x55);
+	data = (data&0x33) + (data>>2&0x33);
+	data = (data + (data>>4)) & 0x0F;
+
+	if(data % 2 == 0)
+	{
+		return true;
+	}
+
+	else
+	{
+		return false;
+	}
+
+}
+
+
+static void uart_send_stop_bit(void)
+{
+	/*
+	 * Static function to send the last bit.
+	 * timeUart must be equal to 0, at the
+	 * beginning of the new bit. The function
+	 * will change the state of the bufferUart
+	 * variable.
+	 * Input: void
+	 * Output: void
+	 */
+
+	if(timeUart == 0 && flagStopBit == 0)
+	{
+		flagStopBit = 1;
+		HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, GPIO_PIN_SET);
+		return;
+	}
+
+	if(timeUart==1 && flagStopBit == 1)
+	{
+		return; /*make sure to end stop bit*/
+	}
+
+	if(timeUart == 0 && flagStopBit == 1)
+	{
+		flagStopBit = 0;
+		bufferUart.state = EndTX;
+	}
+
+
+}
+
+
+static inline void uart_send_bit(uint8_t bit)
+{
+	/*
+	 * Static function to send a bit of
+	 * 1 or 0. TimeUart must be equal to
+	 * 0, at the start of a new bit sample
+	 * Input: bit value 1 or 0
+	 * Output: void
+	 */
+
+
+	if(timeUart == 0 && flagSendBit == 0)
+	{
+		flagSendBit = 1;
+		HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, bit);
+		return;
+	}
+
+	if(timeUart==1 && flagSendBit == 1)
+	{
+		return; /*make sure to end stop bit*/
+	}
+
+	if(timeUart == 0 && flagSendBit == 1)
+	{
+		flagSendBit = 0;
+		flagEndBit = 1;
+	}
 
 }
 
@@ -152,44 +248,47 @@ static inline void uart_com_handle(void)
 
 					return; /*the return will make the 8th bit
 							  last all cycle until timeUart is 0*/
-
 				}
 
 				/*parity bit tx*/
 
-				if(bitIndex == 8) /*first iteration is 0*/
+				if(bitIndex == 8 && timeUart == 0) /*first iteration is 0*/
 				{
 					if(bufferUart.parity == None)
 					{
-						if(timeUart == 0 && flagStopBit == 0)
-						{
-							flagStopBit = 1;
-							HAL_GPIO_WritePin(UART_TX_PORT, UART_TX_PIN, GPIO_PIN_SET);
-							return;
-						}
-
-						if(timeUart==1 && flagStopBit == 1)
-						{
-							return; /*make sure to end stop bit*/
-						}
-
-						if(timeUart == 0 && flagStopBit == 1)
-						{
-							flagStopBit = 0;
-							bufferUart.state = EndTX;
-						}
-
+						uart_send_stop_bit();
+						return;
 					}
 
-					if(bufferUart.parity == Even)
+
+					if(flagEndBit == 0)
 					{
+						if(bufferUart.parity == Even && flagParityBit==true)
+						{
+							uart_send_bit(0);
+						}
 
+						if(bufferUart.parity == Even && flagParityBit==false)
+						{
+							uart_send_bit(1);
+						}
+
+						if(bufferUart.parity == Odd && flagParityBit==true)
+						{
+							uart_send_bit(1);
+						}
+
+						if(bufferUart.parity == Odd && flagParityBit==false)
+						{
+							uart_send_bit(0);
+						}
 					}
 
-					if(bufferUart.parity == Odd)
+					if(flagEndBit == 1)
 					{
-
+						uart_send_stop_bit(); /*iteration of timerUart equal 0*/
 					}
+
 				}
 
 			}

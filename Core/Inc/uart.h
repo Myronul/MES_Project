@@ -9,6 +9,7 @@
 #define INC_UART_H_
 
 #include"main.h"
+#include <stdbool.h>
 
 typedef enum STATE
 {

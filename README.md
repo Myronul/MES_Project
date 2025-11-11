@@ -22,3 +22,9 @@ acquisition relies on the timer interrupts synchronized with the incoming signal
 Future Features:
 *Implementation of a message queue, allowing automatic push of data that will be transmitted automatically via ISR.
 *Implementation of dynamically configurable baud rate.
+
+
+Added:
+-Parity bit for TX data with the format: START BIT | 8 bits PAYLOAD | PARITY | STOP Bit, so in total 1 + 8 + 1 + 1 = 11 bits per frame
+-Support for even and odd parity
+-CheckParity static function that compute the bit in O(1) using bits processing function 
