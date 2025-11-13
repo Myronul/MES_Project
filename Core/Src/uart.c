@@ -30,6 +30,8 @@ static volatile uint8_t flagDataTx = 0;
 static volatile uint8_t flagSendBit = 0;
 static volatile uint8_t flagEndBit = 0; /*check end send bit function*/
 static volatile uint8_t flagParityBit = 0;
+
+static volatile uint8_t parityBitValue = 0;
 static volatile uint8_t bitIndex = 0;
 
 /*flags for RX data*/
@@ -133,12 +135,12 @@ static inline uint8_t uart_check_parity(uint8_t data)
 
 	if(data % 2 == 0)
 	{
-		return true;
+		return true; /*1*/
 	}
 
 	else
 	{
-		return false;
+		return false; /*0*/
 	}
 
 }
@@ -344,17 +346,62 @@ static inline void uart_com_handle(void)
 				if(bufferUart.parity == None)
 				{
 					/*stop bit*/
-					bufferUart.state = EndRX;
+					if(HAL_GPIO_ReadPin(UART_RX_PORT, UART_RX_PIN) == 1)
+					{
+						bufferUart.state = EndRX;
+					}
+
+					else
+					{
+						bufferUart.state = ERR;
+						return;
+					}
 				}
 
-				if(bufferUart.parity == Odd)
+				else
 				{
 
-				}
+					if(flagParityBit == 0) /*parity bit sampling*/
+					{
+						/*take parity bit value*/
+						parityBitValue = HAL_GPIO_ReadPin(UART_RX_PORT, UART_RX_PIN);
 
-				if(bufferUart.parity == Even)
-				{
+						if(((uart_check_parity(bufferUart.data) + parityBitValue) % 2 == 1) && (bufferUart.parity == Even))
+						{
+							/*correct bit sampling*/
+							flagParityBit = 1;
+							return;
+						}
 
+						if(((uart_check_parity(bufferUart.data) + parityBitValue) % 2 == 0) && (bufferUart.parity == Odd))
+						{
+							/*correct bit sampling*/
+							flagParityBit = 1;
+							return;
+						}
+
+						/*error if not*/
+						bufferUart.state = ERR;
+						flagParityBit = 1;
+						return;
+					}
+
+					if(flagParityBit == 1)
+					{
+						/*stop bit*/
+
+						if(HAL_GPIO_ReadPin(UART_RX_PORT, UART_RX_PIN) == 1)
+						{
+							bufferUart.state = EndRX;
+						}
+
+						else
+						{
+							bufferUart.state = ERR;
+							return;
+						}
+
+					}
 				}
 
 			}
@@ -368,11 +415,19 @@ static inline void uart_com_handle(void)
     	    	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 		break;
 
+		case(ERR):
+    	    	 __HAL_GPIO_EXTI_CLEAR_IT(UART_RX_PIN); /*clear intr bit flag*/
+    	    	 bufferUart.state = IDLE;
+    	    	 HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+		break;
+
 
 
 		default: break;
 
 	}
+
+
 }
 
 
