@@ -98,7 +98,10 @@ int main(void)
   //uart_send_byte(data);
 
   uart_send_data("Pui de piropopircanita", 22);
-
+  char buffer[255];
+  uart_receive_data(buffer,5,10);
+  uart_send_data(buffer,5);
+  uart_receive_data(buffer,5,10);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -231,7 +234,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PA10 */
   GPIO_InitStruct.Pin = GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/

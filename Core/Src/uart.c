@@ -23,6 +23,9 @@ typedef struct UART
 static UART bufferUart = {0,0,0}; /*init uart buffer*/
 static volatile uint16_t timeUart = 0;
 
+static volatile uint16_t timerRx = 0; /*timer for receiving data*/
+static volatile uint8_t flagSequence = 0; /*flag to receive next character*/
+
 /*flags for TX data*/
 static volatile uint8_t flagStartBit = 0;
 static volatile uint8_t flagStopBit = 0;
@@ -42,6 +45,7 @@ static volatile uint8_t flagRxStart = 0;
 /*Functions prototypes*/
 void uart_init(PARITY parity);
 void uart_send_data(char* restrict data, size_t len);
+void uart_receive_data(char* buffer, uint16_t len, uint16_t timeout);
 static inline void uart_send_byte(uint8_t data);
 static inline uint8_t uart_check_parity(uint8_t data);
 static inline void uart_com_handle(void);
@@ -114,6 +118,29 @@ void uart_send_data(char* restrict data, size_t len)
 		len--;
 	}
 
+}
+
+
+void uart_receive_data(char* buffer, uint16_t len, uint16_t timeout)
+{
+	/*
+	 * Function that will wait a certain timeout to receive data,
+	 * via UART.
+	 * Input: Pointer to a 8 bit data
+	 * 		  Length of the data in bytes
+	 * 		  timeout in seconds
+	 */
+
+	uint16_t count = 0;
+	timerRx = timeout*600; /*1 seconds*/
+
+	while(count<len && timerRx!=0)
+	{
+		while(flagSequence == 0);
+		flagSequence = 0;
+		buffer[count++] = bufferUart.data;
+
+	}
 }
 
 
@@ -211,6 +238,14 @@ static inline void uart_send_bit(uint8_t bit)
 
 }
 
+
+static inline void reset_rx_intr(void)
+{
+	__HAL_GPIO_EXTI_CLEAR_IT(UART_RX_PIN);
+	flagSequence = 1;
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	bufferUart.state = EndRX;
+}
 
 
 static inline void uart_com_handle(void)
@@ -348,7 +383,8 @@ static inline void uart_com_handle(void)
 					/*stop bit*/
 					if(HAL_GPIO_ReadPin(UART_RX_PORT, UART_RX_PIN) == 1)
 					{
-						bufferUart.state = EndRX;
+						//bufferUart.state = EndRX;
+						reset_rx_intr();
 					}
 
 					else
@@ -392,7 +428,7 @@ static inline void uart_com_handle(void)
 
 						if(HAL_GPIO_ReadPin(UART_RX_PORT, UART_RX_PIN) == 1)
 						{
-							bufferUart.state = EndRX;
+							reset_rx_intr();
 						}
 
 						else
@@ -410,15 +446,21 @@ static inline void uart_com_handle(void)
 
 
 		case(EndRX):
-    	    	__HAL_GPIO_EXTI_CLEAR_IT(UART_RX_PIN); /*clear intr bit flag*/
-    	    	bufferUart.state = IDLE;
-    	    	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+				bufferUart.state = IDLE;
+    	    	//__HAL_GPIO_EXTI_CLEAR_IT(UART_RX_PIN); /*clear intr bit flag*/
+    	    	//bufferUart.state = IDLE;
+    	    	//flagSequence = 1;
+    	    	//HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 		break;
 
 		case(ERR):
     	    	 __HAL_GPIO_EXTI_CLEAR_IT(UART_RX_PIN); /*clear intr bit flag*/
     	    	 bufferUart.state = IDLE;
     	    	 HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+		break;
+
+		case(IDLE):
+
 		break;
 
 
@@ -442,6 +484,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		timeUart = (timeUart + 1) % 2;
 		uart_com_handle();
 		//HAL_GPIO_TogglePin(UART_TX_PORT, UART_TX_PIN);
+		if(timerRx != 0)
+		{
+			timerRx--;
+		}
 	}
 
 }
@@ -458,6 +504,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		/*start reception data*/
 		HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
 
+		flagParityBit = 0; /*reset flag for rx stop bit*/
 		flagRxStart = 1;
 		timeUart = 0;
 		bitIndex = 0;

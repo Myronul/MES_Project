@@ -32,5 +32,7 @@ typedef enum PARITY
 
 void uart_init(PARITY parity);
 void uart_send_data(char* restrict data, size_t len);
+void uart_receive_data(char* buffer, uint16_t len, uint16_t timeout);
+
 
 #endif /* INC_UART_H_ */
