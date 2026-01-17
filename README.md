@@ -2,7 +2,8 @@
 
 A pure software implementation of the UART protocol for STM32 microcontrollers, developed without relying on hardware UART peripherals. This project demonstrates protocol emulation using only GPIO pins, timers, and interrupts.
 
-![UART Protocol Waveform](https://via.placeholder.com/800x200/1a1a1a/00ff00?text=START+%7C+D0+D1+D2+D3+D4+D5+D6+D7+%7C+PARITY+%7C+STOP)
+<img width="725" height="199" alt="image" src="https://github.com/user-attachments/assets/7cfeef6d-d3d4-4b6b-a840-0d326703e417" />
+
 
 ## Project Overview
 
