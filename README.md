@@ -41,7 +41,8 @@ This implementation recreates the asynchronous UART protocol entirely in softwar
 - **Prescaler:** 4 → 21 MHz
 - **Counter Period:** 35,000 → 600 Hz
 
-![System Block Diagram](https://via.placeholder.com/600x400/2d2d2d/ffffff?text=STM32+%E2%86%94+USB-TTL+%E2%86%94+PC)
+<img width="663" height="347" alt="image" src="https://github.com/user-attachments/assets/cc486082-5c5b-45df-89c1-541667fd1e88" />
+
 
 ## Software Architecture
 
