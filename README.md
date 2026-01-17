@@ -88,7 +88,8 @@ The protocol operates through a carefully designed FSM with the following states
 - **EndRX:** Reception complete, transitioning to IDLE
 - **ERR:** Error state (parity/framing error)
 
-![FSM State Diagram](https://via.placeholder.com/700x500/1e1e1e/00ff00?text=IDLE+%E2%86%94+TX+%E2%86%92+EndTX+%7C+IDLE+%E2%86%94+RX+%E2%86%92+EndRX+%7C+ERR+%E2%86%92+IDLE)
+<img width="509" height="558" alt="image" src="https://github.com/user-attachments/assets/bf3a70f6-1c99-4987-a4d2-223b968e8e3e" />
+
 
 ### Timing and Sampling
 
@@ -215,7 +216,8 @@ The implementation was tested with:
 - ✅ Framing error detection
 - ✅ Timeout mechanism
 
-![Serial Monitor Test](https://via.placeholder.com/800x300/0a0a0a/00ff00?text=TX%3A+pui+de+piropopircanita+%7C+RX%3A+UART+OK)
+<img width="945" height="149" alt="image" src="https://github.com/user-attachments/assets/10cba984-fdbb-4fd8-bb4e-50284dfb06e8" />
+
 
 ## Technical Challenges and Solutions
 
