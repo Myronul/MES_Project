@@ -218,6 +218,8 @@ The implementation was tested with:
 
 <img width="945" height="149" alt="image" src="https://github.com/user-attachments/assets/10cba984-fdbb-4fd8-bb4e-50284dfb06e8" />
 
+<img width="403" height="538" alt="image" src="https://github.com/user-attachments/assets/52121899-21f0-467f-b6bb-33e329f82267" />
+
 
 ## Technical Challenges and Solutions
 
