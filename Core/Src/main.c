@@ -99,9 +99,10 @@ int main(void)
 
   uart_send_data("Pui de piropopircanita", 22);
   char buffer[255];
-  uart_receive_data(buffer,5,10);
-  uart_send_data(buffer,5);
-  uart_receive_data(buffer,5,10);
+  uart_receive_data(buffer,6,10);
+  uart_send_data(buffer,6);
+  uart_receive_data(buffer,6,10);
+  uart_send_data(buffer,6);
   /* USER CODE END 2 */
 
   /* Infinite loop */

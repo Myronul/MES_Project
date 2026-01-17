@@ -11,26 +11,8 @@
 #include"main.h"
 #include <stdbool.h>
 
-typedef enum STATE
-{
-	IDLE,
-	TX,
-	EndTX,
-	RX,
-	EndRX,
-	ERR
 
-}STATE;
-
-typedef enum PARITY
-{
-	None,
-	Odd,
-	Even
-
-}PARITY;
-
-void uart_init(PARITY parity);
+void uart_init(uint8_t parity);
 void uart_send_data(char* restrict data, size_t len);
 void uart_receive_data(char* buffer, uint16_t len, uint16_t timeout);
 

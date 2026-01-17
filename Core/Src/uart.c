@@ -9,6 +9,26 @@
 
 extern TIM_HandleTypeDef htim2;
 
+typedef enum STATE
+{
+	IDLE,
+	TX,
+	EndTX,
+	RX,
+	EndRX,
+	ERR
+
+}STATE;
+
+
+typedef enum PARITY
+{
+	None,
+	Odd,
+	Even
+
+}PARITY;
+
 
 typedef struct UART
 {
@@ -43,16 +63,17 @@ static volatile uint8_t flagRxStart = 0;
 
 
 /*Functions prototypes*/
-void uart_init(PARITY parity);
+void uart_init(uint8_t parity);
 void uart_send_data(char* restrict data, size_t len);
 void uart_receive_data(char* buffer, uint16_t len, uint16_t timeout);
 static inline void uart_send_byte(uint8_t data);
 static inline uint8_t uart_check_parity(uint8_t data);
 static inline void uart_com_handle(void);
+static inline void reset_rx_intr(void);
 
 
 
-void uart_init(PARITY parity)
+void uart_init(uint8_t parity)
 {
 	/*
 	 * init of the uart cusotm protocol
@@ -131,14 +152,15 @@ void uart_receive_data(char* buffer, uint16_t len, uint16_t timeout)
 	 * 		  timeout in seconds
 	 */
 
-	uint16_t count = 0;
 	timerRx = timeout*600; /*1 seconds*/
 
-	while(count<len && timerRx!=0)
+	while(len!=0 && timerRx!=0)
 	{
 		while(flagSequence == 0);
 		flagSequence = 0;
-		buffer[count++] = bufferUart.data;
+		*buffer = bufferUart.data;
+		buffer++;
+		len--;
 
 	}
 }
