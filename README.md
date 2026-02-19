@@ -286,10 +286,6 @@ This project was developed as part of the Microcontrollers and Embedded Systems 
 
 This is an academic project, but suggestions and improvements are welcome. Feel free to open an issue or submit a pull request.
 
-## Acknowledgments
-
-Special thanks to the MES course instructors and the ACES program for providing the opportunity to explore low-level embedded systems programming and protocol implementation.
-
 ---
 
 **Repository:** https://github.com/Myronul/MES_Project.git
